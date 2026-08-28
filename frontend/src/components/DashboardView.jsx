@@ -1,5 +1,6 @@
 "use client";
 
+import { motion } from "framer-motion";
 import { Wallet, TrendingUp, CreditCard, ArrowUpRight, ArrowDownLeft, ChevronLeft, ChevronRight, PieChart, BarChart2, ArrowRight, Download, Sparkles, Settings } from "lucide-react";
 import CurrencyWidget from "@/components/CurrencyWidget";
 import CreditHealthAnalyzer from "@/components/CreditHealthAnalyzer";
