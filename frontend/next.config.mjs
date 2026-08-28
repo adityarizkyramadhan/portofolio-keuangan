@@ -1,7 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   async rewrites() {
-    // Enable API proxying for local dev server
     if (process.env.NODE_ENV === 'development') {
       return [
         {
@@ -10,7 +9,12 @@ const nextConfig = {
         },
       ];
     }
-    return [];
+    return [
+      {
+        source: '/api/:path*',
+        destination: '/api',
+      },
+    ];
   },
 };
 
