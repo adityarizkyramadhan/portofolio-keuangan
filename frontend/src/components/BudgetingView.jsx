@@ -131,21 +131,28 @@ export default function BudgetingView({ categories = [], transactions = [], sele
                 </div>
 
                 {editingCategory === cat._id ? (
-                  <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
-                    <input
-                      type="number"
-                      step="any"
-                      placeholder="Masukkan limit anggaran..."
-                      value={inputLimit}
-                      onChange={(e) => setInputLimit(e.target.value)}
-                      className="w-full p-2 border border-indigo-200 rounded-xl text-xs focus:outline-none focus:border-indigo-600 font-bold"
-                    />
-                    <button
-                      onClick={() => saveBudget(cat._id, inputLimit)}
-                      className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition cursor-pointer flex-shrink-0"
-                    >
-                      Simpan
-                    </button>
+                  <div className="space-y-1.5 pt-2 border-t border-slate-100">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        step="any"
+                        placeholder="Masukkan limit anggaran..."
+                        value={inputLimit}
+                        onChange={(e) => setInputLimit(e.target.value)}
+                        className="w-full p-2 border border-indigo-200 rounded-xl text-xs focus:outline-none focus:border-indigo-600 font-bold"
+                      />
+                      <button
+                        onClick={() => saveBudget(cat._id, inputLimit)}
+                        className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition cursor-pointer flex-shrink-0"
+                      >
+                        Simpan
+                      </button>
+                    </div>
+                    {inputLimit && Number(inputLimit) > 0 && (
+                      <span className="text-[11px] font-bold text-indigo-600 block">
+                        ≈ {formatIDR(Number(inputLimit))}
+                      </span>
+                    )}
                   </div>
                 ) : (
                   <>
