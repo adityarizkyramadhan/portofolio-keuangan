@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Wallet, Plus, ArrowUpRight, ArrowDownLeft, ArrowLeftRight, Landmark, CreditCard, Building2, Coins, Vault, Trash2, ShieldCheck, Globe, QrCode, RotateCcw } from "lucide-react";
+import { Wallet, Plus, ArrowUpRight, ArrowDownLeft, ArrowLeftRight, Landmark, CreditCard, Building2, Coins, Vault, Trash2, ShieldCheck, Globe, QrCode, RotateCcw, Receipt, X } from "lucide-react";
 
 const CURRENCY_SYMBOLS = {
   IDR: "Rp",
@@ -13,9 +13,10 @@ const CURRENCY_SYMBOLS = {
   SAR: "SR"
 };
 
-export default function WalletsView({ wallets, onOpenModal, onDeleteWallet, onRecalculateWallets }) {
+export default function WalletsView({ wallets, transactions = [], onOpenModal, onDeleteWallet, onRecalculateWallets }) {
   const [rates, setRates] = useState({});
   const [recalculating, setRecalculating] = useState(false);
+  const [activeAuditWallet, setActiveAuditWallet] = useState(null);
 
   const handleRecalculateClick = async () => {
     if (!onRecalculateWallets) return;
@@ -203,6 +204,25 @@ export default function WalletsView({ wallets, onOpenModal, onDeleteWallet, onRe
                 />
               </div>
             </div>
+
+            {/* CC Settlement Quick Button */}
+            {used > 0 && onOpenModal && (
+              <button
+                onClick={() => {
+                  const defaultSource = bankWallets[0] || wallets?.find((x) => x.type === "BANK" || x.type === "BANK_SAVINGS");
+                  onOpenModal("transfer", {
+                    destinationWalletId: w._id,
+                    sourceWalletId: defaultSource?._id || "",
+                    amount: used,
+                    note: `Pelunasan Tagihan Kartu Kredit ${w.name}`
+                  });
+                }}
+                className="w-full py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <ArrowDownLeft className="w-3.5 h-3.5 text-emerald-600" />
+                Bayar Tagihan CC ({formatNativeBalance(used, currency)})
+              </button>
+            )}
           </div>
         ) : (
           <div className="mt-4 pt-3 border-t border-slate-100 flex justify-between items-end">
@@ -216,6 +236,15 @@ export default function WalletsView({ wallets, onOpenModal, onDeleteWallet, onRe
             </span>
           </div>
         )}
+
+        {/* Audit Trail Button */}
+        <button
+          onClick={() => setActiveAuditWallet(w)}
+          className="w-full py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 rounded-xl text-[11px] font-semibold transition flex items-center justify-center gap-1 cursor-pointer"
+        >
+          <Receipt className="w-3.5 h-3.5 text-indigo-600" />
+          Riwayat Mutasi Akun
+        </button>
       </motion.div>
     );
   };
@@ -291,6 +320,74 @@ export default function WalletsView({ wallets, onOpenModal, onDeleteWallet, onRe
           <Wallet className="w-10 h-10 mx-auto text-slate-300 mb-2" />
           <p className="font-semibold text-slate-700">Belum ada akun keuangan terdaftar</p>
           <p className="text-xs text-slate-400 mt-1">Tekan tombol "+ Tambah Akun" untuk mendaftarkan rekening Rupiah, Kartu Kredit, atau Valas.</p>
+        </div>
+      )}
+      {/* Wallet Audit Trail Modal */}
+      {activeAuditWallet && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs font-sans p-3 sm:p-6 flex items-center justify-center min-h-screen">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white w-full sm:max-w-xl rounded-3xl p-6 shadow-2xl space-y-4 max-h-[85vh] flex flex-col my-auto"
+          >
+            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
+                  <Receipt className="w-5 h-5 text-indigo-600" />
+                  Riwayat Mutasi: {activeAuditWallet.name}
+                </h3>
+                <span className="text-xs text-slate-500 font-medium uppercase">{getWalletLabel(activeAuditWallet.type)}</span>
+              </div>
+              <button onClick={() => setActiveAuditWallet(null)} className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+              {(() => {
+                const walletTxs = (transactions || []).filter(
+                  (tx) =>
+                    tx.accountId?.toString() === activeAuditWallet._id?.toString() ||
+                    tx.destinationAccountId?.toString() === activeAuditWallet._id?.toString()
+                );
+
+                if (walletTxs.length === 0) {
+                  return (
+                    <div className="p-8 text-center space-y-1">
+                      <Receipt className="w-8 h-8 text-slate-300 mx-auto" />
+                      <p className="text-xs font-semibold text-slate-600">Belum ada mutasi transaksi untuk akun ini.</p>
+                    </div>
+                  );
+                }
+
+                return walletTxs.map((tx, idx) => {
+                  const isSource = tx.accountId?.toString() === activeAuditWallet._id?.toString();
+                  const isIncome = tx.type === "INCOME" || (!isSource && tx.type === "TRANSFER");
+                  const isExpense = tx.type === "EXPENSE" || (isSource && tx.type === "TRANSFER");
+
+                  return (
+                    <div key={tx._id || idx} className="p-3 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2.5">
+                        <div className={`p-2 rounded-lg ${isIncome ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"}`}>
+                          {isIncome ? <ArrowDownLeft className="w-4 h-4" /> : <ArrowUpRight className="w-4 h-4" />}
+                        </div>
+                        <div>
+                          <span className="font-bold text-slate-900 block">{tx.categoryName || (tx.type === "TRANSFER" ? "Transfer" : "Transaksi")}</span>
+                          <span className="text-[10px] text-slate-500 block">
+                            {tx.note || "Tanpa catatan"} • {new Date(tx.date || tx.createdAt).toLocaleDateString("id-ID")}
+                          </span>
+                        </div>
+                      </div>
+
+                      <span className={`font-bold text-xs ${isIncome ? "text-emerald-600" : "text-rose-600"}`}>
+                        {isIncome ? "+" : "-"}{formatNativeBalance(tx.amount, resolveCurrency(activeAuditWallet))}
+                      </span>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+          </motion.div>
         </div>
       )}
     </div>

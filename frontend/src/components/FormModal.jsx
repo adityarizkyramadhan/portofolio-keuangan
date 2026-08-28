@@ -49,6 +49,13 @@ export default function FormModal({ modalType, targetAsset, isOpen, onClose, onS
 
     if (modalType === "override_value" && targetAsset) {
       setFormData({ newTotalValue: targetAsset.totalValue });
+    } else if (modalType === "transfer" && targetAsset && typeof targetAsset === "object") {
+      setFormData({
+        sourceWalletId: targetAsset.sourceWalletId || "",
+        destinationWalletId: targetAsset.destinationWalletId || "",
+        amount: targetAsset.amount || "",
+        note: targetAsset.note || ""
+      });
     } else if (modalType === "create_wallet") {
       setFormData({ type: "BANK", currency: "IDR" });
     } else if (modalType === "create_asset") {

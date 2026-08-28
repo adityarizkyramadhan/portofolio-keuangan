@@ -270,6 +270,50 @@ export default function DashboardView({ dashboardData, selectedDate, onMonthChan
               </div>
             </div>
           </div>
+
+          {/* Top Expense Categories Breakdown */}
+          {(() => {
+            const expenseTxs = (transactions || []).filter((t) => t.type === "EXPENSE");
+            const categoryTotals = {};
+            let totalExpenseSum = 0;
+
+            expenseTxs.forEach((tx) => {
+              const cat = tx.categoryName || "Lainnya";
+              const amt = Number(tx.amount) || 0;
+              categoryTotals[cat] = (categoryTotals[cat] || 0) + amt;
+              totalExpenseSum += amt;
+            });
+
+            const topCategories = Object.entries(categoryTotals)
+              .map(([name, value]) => ({
+                name,
+                value,
+                percent: totalExpenseSum > 0 ? Math.round((value / totalExpenseSum) * 100) : 0
+              }))
+              .sort((a, b) => b.value - a.value)
+              .slice(0, 5);
+
+            if (topCategories.length === 0) return null;
+
+            return (
+              <div className="pt-3 border-t border-slate-200/60 space-y-2.5">
+                <span className="text-xs font-bold text-slate-800 block">📊 Pos Pengeluaran Terbesar</span>
+                <div className="space-y-2">
+                  {topCategories.map((cat, i) => (
+                    <div key={i} className="space-y-1">
+                      <div className="flex justify-between text-[11px] font-semibold text-slate-700">
+                        <span>{cat.name}</span>
+                        <span>{formatIDR(cat.value)} ({cat.percent}%)</span>
+                      </div>
+                      <div className="w-full bg-slate-200/60 h-1.5 rounded-full overflow-hidden">
+                        <div className="bg-rose-500 h-full rounded-full transition-all duration-300" style={{ width: `${cat.percent}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </div>
 

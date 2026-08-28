@@ -1,15 +1,66 @@
 "use client";
 
-import { useState } from "react";
-import { Search, Download, ArrowUpRight, ArrowDownLeft, ArrowLeftRight, Filter, Receipt } from "lucide-react";
+import { useState, useRef } from "react";
+import { Search, Download, ArrowUpRight, ArrowDownLeft, ArrowLeftRight, Filter, Receipt, Upload, Database } from "lucide-react";
 
-export default function TransactionsLedgerView({ transactions = [], categories = [], wallets = [] }) {
+export default function TransactionsLedgerView({ transactions = [], categories = [], wallets = [], onImportTransactions }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("ALL");
   const [categoryFilter, setCategoryFilter] = useState("ALL");
+  const fileInputRef = useRef(null);
 
   const formatIDR = (val) => {
     return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(val || 0);
+  };
+
+  const handleExportJSON = () => {
+    if (!transactions || transactions.length === 0) {
+      alert("Tidak ada data transaksi untuk di-backup.");
+      return;
+    }
+    const backupData = {
+      version: "1.0",
+      exportedAt: new Date().toISOString(),
+      transactions
+    };
+    const jsonStr = JSON.stringify(backupData, null, 2);
+    const blob = new Blob([jsonStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `Backup_KeuanganKu_${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleFileImport = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const parsed = JSON.parse(event.target?.result || "{}");
+        const importedList = Array.isArray(parsed) ? parsed : (parsed.transactions || []);
+
+        if (importedList.length === 0) {
+          alert("Format file JSON tidak valid atau tidak berisi array transaksi.");
+          return;
+        }
+
+        if (onImportTransactions) {
+          onImportTransactions(importedList);
+        } else {
+          alert(`Berhasil membaca ${importedList.length} entri transaksi.`);
+        }
+      } catch (err) {
+        alert("Gagal membaca file JSON. Pastikan format file sesuai.");
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
   };
 
   const filteredTransactions = transactions.filter((tx) => {
@@ -68,12 +119,37 @@ export default function TransactionsLedgerView({ transactions = [], categories =
           <p className="text-xs text-slate-500">Daftar arus kas masuk, keluar, dan transfer secara kronologis.</p>
         </div>
 
-        <button
-          onClick={handleExportCSV}
-          className="w-full sm:w-auto px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-xs flex items-center justify-center gap-2 transition cursor-pointer"
-        >
-          <Download className="w-4 h-4" /> Ekspor Laporan (CSV)
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileImport}
+            accept=".json"
+            className="hidden"
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold shadow-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
+            title="Impor transaksi dari file backup JSON"
+          >
+            <Upload className="w-3.5 h-3.5 text-indigo-600" /> Impor Data
+          </button>
+
+          <button
+            onClick={handleExportJSON}
+            className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold shadow-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
+            title="Download cadangan data lengkap format JSON"
+          >
+            <Database className="w-3.5 h-3.5 text-emerald-600" /> Backup JSON
+          </button>
+
+          <button
+            onClick={handleExportCSV}
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
+          >
+            <Download className="w-3.5 h-3.5" /> CSV
+          </button>
+        </div>
       </div>
 
       {/* Filter & Search Toolbar */}

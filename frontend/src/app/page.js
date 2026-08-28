@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { LayoutDashboard, Wallet, TrendingUp, Tag, Bell, ShieldCheck, LogOut, WifiOff, RefreshCw, Loader2, Receipt, PieChart } from "lucide-react";
+import { LayoutDashboard, Wallet, TrendingUp, Tag, Bell, ShieldCheck, LogOut, WifiOff, RefreshCw, Loader2, Receipt, PieChart, MoreHorizontal, X } from "lucide-react";
 import AuthView from "@/components/AuthView";
 import DashboardView from "@/components/DashboardView";
 import WalletsView from "@/components/WalletsView";
@@ -25,6 +25,7 @@ export default function Home() {
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const [modalType, setModalType] = useState(null);
   const [targetAsset, setTargetAsset] = useState(null);
   const [isBackendOffline, setIsBackendOffline] = useState(false);
@@ -157,6 +158,30 @@ export default function Home() {
       fetchLiveBackendData();
     } catch (e) {
       showToast("error", e.message || "Gagal melakukan hitung ulang saldo");
+    }
+  };
+
+  const handleImportTransactions = async (importedList) => {
+    try {
+      showToast("success", `Memproses impor ${importedList.length} entri transaksi...`);
+      let successCount = 0;
+      for (const tx of importedList) {
+        if (tx.accountId && tx.type && tx.amount) {
+          await api.recordWalletTransaction({
+            walletId: tx.accountId,
+            categoryId: tx.categoryId || null,
+            type: tx.type,
+            amount: tx.amount,
+            note: tx.note || "Impor Data",
+            date: tx.date || tx.createdAt
+          }).catch(() => null);
+          successCount++;
+        }
+      }
+      showToast("success", `Berhasil mengimpor ${successCount} transaksi!`);
+      fetchLiveBackendData();
+    } catch (err) {
+      showToast("error", err.message || "Gagal mengimpor data transaksi");
     }
   };
 
@@ -296,14 +321,17 @@ export default function Home() {
     );
   }
 
-  const NAV_ITEMS = [
+  const PRIMARY_NAV_ITEMS = [
     { id: "dashboard", label: "Dasbor", icon: LayoutDashboard },
     { id: "ledger", label: "Transaksi", icon: Receipt },
     { id: "wallets", label: "Akun Keuangan", icon: Wallet },
-    { id: "portfolio", label: "Investasi", icon: TrendingUp },
-    { id: "budgeting", label: "Anggaran", icon: PieChart },
+    { id: "portfolio", label: "Investasi", icon: TrendingUp }
+  ];
+
+  const SECONDARY_NAV_ITEMS = [
+    { id: "budgeting", label: "Anggaran & Target", icon: PieChart },
     { id: "reminders", label: "Pengingat Tagihan", icon: Bell },
-    { id: "transactions", label: "Kategori", icon: Tag }
+    { id: "transactions", label: "Kategori Transaksi", icon: Tag }
   ];
 
   return (
@@ -324,25 +352,54 @@ export default function Home() {
             </div>
           </div>
 
-          <nav className="space-y-1">
-            {NAV_ITEMS.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveTab(item.id)}
-                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
-                    isActive
-                      ? "bg-indigo-600 text-white shadow-xs"
-                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  <span>{item.label}</span>
-                </button>
-              );
-            })}
+          <nav className="space-y-4">
+            <div>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block px-3 mb-1.5">UTAMA</span>
+              <div className="space-y-1">
+                {PRIMARY_NAV_ITEMS.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = activeTab === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => setActiveTab(item.id)}
+                      className={`w-full flex items-center gap-3 px-3.5 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                        isActive
+                          ? "bg-indigo-600 text-white shadow-xs"
+                          : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                      }`}
+                    >
+                      <Icon className="w-4 h-4" />
+                      <span>{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block px-3 mb-1.5">PERENCANAAN & MASTER</span>
+              <div className="space-y-1">
+                {SECONDARY_NAV_ITEMS.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = activeTab === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => setActiveTab(item.id)}
+                      className={`w-full flex items-center gap-3 px-3.5 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                        isActive
+                          ? "bg-indigo-600 text-white shadow-xs"
+                          : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                      }`}
+                    >
+                      <Icon className="w-4 h-4" />
+                      <span>{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </nav>
         </div>
 
@@ -450,11 +507,13 @@ export default function Home() {
                   transactions={transactions}
                   categories={categories}
                   wallets={wallets}
+                  onImportTransactions={handleImportTransactions}
                 />
               )}
               {activeTab === "wallets" && (
                 <WalletsView
                   wallets={wallets}
+                  transactions={transactions}
                   onOpenModal={handleOpenModal}
                   onDeleteWallet={handleDeleteWallet}
                   onRecalculateWallets={handleRecalculateWallets}
@@ -493,25 +552,81 @@ export default function Home() {
         {/* Mobile Bottom Navigation Bar */}
         <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 py-2 px-2 shadow-lg">
           <div className="max-w-md mx-auto flex justify-around items-center">
-            {NAV_ITEMS.map((item) => {
+            {PRIMARY_NAV_ITEMS.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
               return (
                 <button
                   key={item.id}
-                  onClick={() => setActiveTab(item.id)}
-                  className={`flex flex-col items-center gap-0.5 transition cursor-pointer py-1 px-1.5 rounded-xl ${
+                  onClick={() => {
+                    setActiveTab(item.id);
+                    setIsMoreMenuOpen(false);
+                  }}
+                  className={`flex flex-col items-center gap-0.5 transition cursor-pointer py-1 px-1 rounded-xl ${
                     isActive ? "text-indigo-600 font-bold" : "text-slate-400 hover:text-slate-600"
                   }`}
                 >
                   <Icon className={`w-4 h-4 ${isActive ? "text-indigo-600" : "text-slate-400"}`} />
-                  <span className="text-[9px] font-medium">{item.label}</span>
+                  <span className="text-[10px] font-medium">{item.label}</span>
                 </button>
               );
             })}
+
+            <button
+              onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
+              className={`flex flex-col items-center gap-0.5 transition cursor-pointer py-1 px-1 rounded-xl ${
+                SECONDARY_NAV_ITEMS.some((x) => x.id === activeTab) || isMoreMenuOpen
+                  ? "text-indigo-600 font-bold"
+                  : "text-slate-400 hover:text-slate-600"
+              }`}
+            >
+              <MoreHorizontal className={`w-4 h-4 ${SECONDARY_NAV_ITEMS.some((x) => x.id === activeTab) || isMoreMenuOpen ? "text-indigo-600" : "text-slate-400"}`} />
+              <span className="text-[10px] font-medium">Lainnya</span>
+            </button>
           </div>
         </nav>
       </div>
+
+      {/* Mobile More Menu Bottom Sheet */}
+      {isMoreMenuOpen && (
+        <div className="md:hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-end">
+          <div className="bg-white w-full rounded-t-3xl p-5 space-y-4 border-t border-slate-200 shadow-2xl">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="font-bold text-slate-900 text-sm">Fitur Perencanaan & Master</h3>
+                <span className="text-[10px] text-slate-400">Pilih menu untuk melihat atau mengelola data</span>
+              </div>
+              <button onClick={() => setIsMoreMenuOpen(false)} className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              {SECONDARY_NAV_ITEMS.map((item) => {
+                const Icon = item.icon;
+                const isActive = activeTab === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      setActiveTab(item.id);
+                      setIsMoreMenuOpen(false);
+                    }}
+                    className={`p-3.5 rounded-2xl flex flex-col items-center gap-2 border text-center transition cursor-pointer ${
+                      isActive
+                        ? "bg-indigo-50 border-indigo-200 text-indigo-700 font-bold"
+                        : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
+                    }`}
+                  >
+                    <Icon className={`w-5 h-5 ${isActive ? "text-indigo-600" : "text-slate-600"}`} />
+                    <span className="text-[10px] leading-tight font-semibold">{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Form Modal */}
       <FormModal
