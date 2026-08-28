@@ -26,6 +26,20 @@ class UserRepository {
     const result = await this.collection.insertOne(document);
     return { _id: result.insertedId, name: document.name, email: document.email, createdAt: document.createdAt };
   }
+
+  async updateSalarySettings(id, salarySettings) {
+    if (!ObjectId.isValid(id)) return null;
+    return await this.collection.findOneAndUpdate(
+      { _id: new ObjectId(id) },
+      {
+        $set: {
+          salarySettings: Array.isArray(salarySettings) ? salarySettings : [],
+          updatedAt: new Date()
+        }
+      },
+      { returnDocument: 'after' }
+    );
+  }
 }
 
 module.exports = new UserRepository();

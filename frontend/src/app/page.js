@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { LayoutDashboard, Wallet, TrendingUp, Tag, Bell, ShieldCheck, LogOut, WifiOff, RefreshCw, Loader2, Receipt, PieChart, MoreHorizontal, X } from "lucide-react";
+import { LayoutDashboard, Wallet, TrendingUp, Tag, Bell, ShieldCheck, LogOut, WifiOff, RefreshCw, Loader2, Receipt, PieChart, MoreHorizontal, X, Sparkles } from "lucide-react";
 import AuthView from "@/components/AuthView";
 import DashboardView from "@/components/DashboardView";
 import WalletsView from "@/components/WalletsView";
@@ -11,6 +11,7 @@ import RemindersView from "@/components/RemindersView";
 import TransactionsLedgerView from "@/components/TransactionsLedgerView";
 import BudgetingView from "@/components/BudgetingView";
 import FormModal from "@/components/FormModal";
+import SalarySettingsModal from "@/components/SalarySettingsModal";
 import Toast from "@/components/Toast";
 import {
   DashboardSkeleton,
@@ -26,6 +27,7 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+  const [isSalaryModalOpen, setIsSalaryModalOpen] = useState(false);
   const [modalType, setModalType] = useState(null);
   const [targetAsset, setTargetAsset] = useState(null);
   const [isBackendOffline, setIsBackendOffline] = useState(false);
@@ -182,6 +184,19 @@ export default function Home() {
       fetchLiveBackendData();
     } catch (err) {
       showToast("error", err.message || "Gagal mengimpor data transaksi");
+    }
+  };
+
+  const handleSaveSalarySettings = async (updatedList) => {
+    try {
+      const res = await api.updateSalarySettings(updatedList);
+      if (res && res.data) {
+        setUser(res.data);
+      }
+      showToast("success", "Pengaturan gaji dan pendapatan tetap berhasil disimpan!");
+      fetchLiveBackendData();
+    } catch (err) {
+      showToast("error", err.message || "Gagal menyimpan pengaturan gaji");
     }
   };
 
@@ -496,10 +511,12 @@ export default function Home() {
               {activeTab === "dashboard" && (
                 <DashboardView
                   dashboardData={dashboardData}
+                  user={user}
                   selectedDate={selectedDate}
                   onMonthChange={handleMonthChange}
                   transactions={transactions}
                   onNavigateTab={(tab) => setActiveTab(tab)}
+                  onOpenSalarySettings={() => setIsSalaryModalOpen(true)}
                 />
               )}
               {activeTab === "ledger" && (
@@ -623,6 +640,17 @@ export default function Home() {
                   </button>
                 );
               })}
+
+              <button
+                onClick={() => {
+                  setIsMoreMenuOpen(false);
+                  setIsSalaryModalOpen(true);
+                }}
+                className="p-3.5 rounded-2xl flex flex-col items-center gap-2 border text-center transition cursor-pointer bg-emerald-50 border-emerald-200 text-emerald-800 font-bold hover:bg-emerald-100"
+              >
+                <Sparkles className="w-5 h-5 text-emerald-600" />
+                <span className="text-[10px] leading-tight font-semibold">Pengaturan Gaji</span>
+              </button>
             </div>
           </div>
         </div>
@@ -638,6 +666,25 @@ export default function Home() {
         wallets={wallets}
         assets={assets}
         categories={categories}
+      />
+
+      {/* Salary Settings Modal */}
+      <SalarySettingsModal
+        isOpen={isSalaryModalOpen}
+        onClose={() => setIsSalaryModalOpen(false)}
+        user={user}
+        wallets={wallets}
+        categories={categories}
+        onSaveSalarySettings={handleSaveSalarySettings}
+        onRecordTransaction={async (txData) => {
+          try {
+            await api.recordWalletTransaction(txData);
+            showToast("success", `Penerimaan gaji "${txData.note}" berhasil dicatatkan!`);
+            fetchLiveBackendData();
+          } catch (err) {
+            showToast("error", err.message || "Gagal mencatatkan penerimaan gaji");
+          }
+        }}
       />
     </div>
   );

@@ -39,6 +39,20 @@ class AuthController {
       next(error);
     }
   }
+
+  async updateSalarySettings(req, res, next) {
+    try {
+      const salarySettings = req.body.salarySettings || [];
+      const updatedProfile = await authService.updateSalarySettings(req.userId, salarySettings);
+      res.status(200).json({
+        success: true,
+        message: 'Pengaturan gaji dan pendapatan tetap berhasil disimpan',
+        data: updatedProfile
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 module.exports = new AuthController();

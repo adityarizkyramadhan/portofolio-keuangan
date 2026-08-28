@@ -55,6 +55,7 @@ class AuthService {
       _id: user._id,
       name: user.name,
       email: user.email,
+      salarySettings: user.salarySettings || [],
       createdAt: user.createdAt
     };
 
@@ -72,7 +73,24 @@ class AuthService {
       _id: user._id,
       name: user.name,
       email: user.email,
+      salarySettings: user.salarySettings || [],
       createdAt: user.createdAt
+    };
+  }
+
+  async updateSalarySettings(userId, salarySettings) {
+    const updated = await userRepository.updateSalarySettings(userId, salarySettings);
+    if (!updated) {
+      const err = new Error('Pengguna tidak ditemukan');
+      err.statusCode = 404;
+      throw err;
+    }
+    return {
+      _id: updated._id,
+      name: updated.name,
+      email: updated.email,
+      salarySettings: updated.salarySettings || [],
+      createdAt: updated.createdAt
     };
   }
 

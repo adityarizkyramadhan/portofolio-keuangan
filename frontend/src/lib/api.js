@@ -71,6 +71,10 @@ class ApiClient {
     return await this.request('GET', '/auth/me');
   }
 
+  async updateSalarySettings(salarySettings) {
+    return await this.request('PUT', '/auth/salary-settings', { salarySettings });
+  }
+
   // Categories
   async getCategories() {
     return await this.request('GET', '/categories');

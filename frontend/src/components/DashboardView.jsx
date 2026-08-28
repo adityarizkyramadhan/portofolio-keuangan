@@ -1,11 +1,10 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Wallet, TrendingUp, CreditCard, ArrowUpRight, ArrowDownLeft, ChevronLeft, ChevronRight, PieChart, BarChart2, ArrowRight, Download } from "lucide-react";
+import { Wallet, TrendingUp, CreditCard, ArrowUpRight, ArrowDownLeft, ChevronLeft, ChevronRight, PieChart, BarChart2, ArrowRight, Download, Sparkles, Settings } from "lucide-react";
 import CurrencyWidget from "@/components/CurrencyWidget";
 import CreditHealthAnalyzer from "@/components/CreditHealthAnalyzer";
 
-export default function DashboardView({ dashboardData, selectedDate, onMonthChange, transactions = [], onNavigateTab }) {
+export default function DashboardView({ dashboardData, user, selectedDate, onMonthChange, transactions = [], onNavigateTab, onOpenSalarySettings }) {
   const {
     netWorth = 0,
     totalWalletsBalance = 0,
@@ -185,6 +184,59 @@ export default function DashboardView({ dashboardData, selectedDate, onMonthChan
           </div>
         </div>
       </motion.div>
+
+      {/* Fixed Salary & Payday Status Card */}
+      {(() => {
+        const salaryList = user?.salarySettings || [];
+        const totalTargetSalary = salaryList.reduce((sum, s) => sum + (Number(s.amount) || 0), 0);
+        const actualIncome = monthlyCashFlow.income || 0;
+        const percentRealized = totalTargetSalary > 0 ? Math.min(100, Math.round((actualIncome / totalTargetSalary) * 100)) : 0;
+
+        return (
+          <div className="bg-gradient-to-r from-emerald-950 via-slate-900 to-indigo-950 text-white rounded-3xl p-5 sm:p-6 shadow-md border border-emerald-800/50 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-emerald-800/50 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-emerald-500/20 text-emerald-400 rounded-xl">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-white text-base">Target Gaji & Pendapatan Tetap Bulanan</h3>
+                  <p className="text-[11px] text-emerald-200">Realisasi penerimaan gaji vs target tetap bulan ini.</p>
+                </div>
+              </div>
+
+              <button
+                onClick={onOpenSalarySettings}
+                className="px-3.5 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 border border-emerald-500/40 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer self-start sm:self-auto"
+              >
+                <Settings className="w-3.5 h-3.5" /> Pengaturan Gaji
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
+              <div>
+                <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Target Gaji</span>
+                <span className="text-xl font-black text-emerald-400">{formatIDR(totalTargetSalary)}</span>
+              </div>
+
+              <div>
+                <span className="text-[10px] uppercase font-bold text-slate-400 block">Tercapai Bulan Ini</span>
+                <span className="text-xl font-black text-white">{formatIDR(actualIncome)} ({percentRealized}%)</span>
+              </div>
+
+              <div className="space-y-1">
+                <div className="flex justify-between text-[10px] text-slate-400 font-bold">
+                  <span>RASIO CAPAIAN GAJI</span>
+                  <span>{percentRealized}%</span>
+                </div>
+                <div className="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                  <div className="bg-emerald-400 h-full rounded-full transition-all duration-500" style={{ width: `${percentRealized}%` }} />
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Monthly Financial Rekap & Navigation */}
       <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 shadow-xs space-y-5">
