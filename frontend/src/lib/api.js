@@ -109,6 +109,10 @@ class ApiClient {
     return await this.request('POST', '/wallets/transfer', payload);
   }
 
+  async recalculateWallets() {
+    return await this.request('POST', '/wallets/recalculate');
+  }
+
   async getTransactions(limit = 100) {
     return await this.request('GET', `/wallets/transactions?limit=${limit}`);
   }

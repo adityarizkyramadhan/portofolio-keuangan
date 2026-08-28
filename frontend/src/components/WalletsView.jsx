@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Wallet, Plus, ArrowUpRight, ArrowDownLeft, ArrowLeftRight, Landmark, CreditCard, Building2, Coins, Vault, Trash2, ShieldCheck, Globe } from "lucide-react";
+import { Wallet, Plus, ArrowUpRight, ArrowDownLeft, ArrowLeftRight, Landmark, CreditCard, Building2, Coins, Vault, Trash2, ShieldCheck, Globe, QrCode, RotateCcw } from "lucide-react";
 
 const CURRENCY_SYMBOLS = {
   IDR: "Rp",
@@ -13,8 +13,19 @@ const CURRENCY_SYMBOLS = {
   SAR: "SR"
 };
 
-export default function WalletsView({ wallets, onOpenModal, onDeleteWallet }) {
+export default function WalletsView({ wallets, onOpenModal, onDeleteWallet, onRecalculateWallets }) {
   const [rates, setRates] = useState({});
+  const [recalculating, setRecalculating] = useState(false);
+
+  const handleRecalculateClick = async () => {
+    if (!onRecalculateWallets) return;
+    setRecalculating(true);
+    try {
+      await onRecalculateWallets();
+    } finally {
+      setRecalculating(false);
+    }
+  };
 
   useEffect(() => {
     // Fetch live rates from public API for foreign currency wallets IDR conversion
@@ -70,6 +81,8 @@ export default function WalletsView({ wallets, onOpenModal, onDeleteWallet }) {
       case "BANK":
       case "BANK_SAVINGS":
         return <Building2 className="w-5 h-5 text-blue-600" />;
+      case "QRIS":
+        return <QrCode className="w-5 h-5 text-indigo-600" />;
       case "E_WALLET":
         return <CreditCard className="w-5 h-5 text-purple-600" />;
       case "CRYPTO_WALLET":
@@ -86,11 +99,13 @@ export default function WalletsView({ wallets, onOpenModal, onDeleteWallet }) {
       case "CREDIT_CARD":
         return "Kartu Kredit";
       case "BANK":
-        return "Bank Utama";
+        return "Bank Utama / Debit";
       case "BANK_SAVINGS":
         return "Bank Tabungan";
       case "RDN":
         return "RDN Sekuritas";
+      case "QRIS":
+        return "QRIS / Pembayaran QR";
       case "E_WALLET":
         return "E-Wallet / QRIS";
       case "CASH":
@@ -106,14 +121,16 @@ export default function WalletsView({ wallets, onOpenModal, onDeleteWallet }) {
 
   // Group wallets by categories
   const bankWallets = wallets?.filter((w) => (w.type === "BANK" || w.type === "BANK_SAVINGS" || w.type === "CASH") && resolveCurrency(w) === "IDR") || [];
+  const qrisWallets = wallets?.filter((w) => (w.type === "E_WALLET" || w.type === "QRIS") && resolveCurrency(w) === "IDR") || [];
   const creditCards = wallets?.filter((w) => w.type === "CREDIT_CARD") || [];
-  const valasWallets = wallets?.filter((w) => resolveCurrency(w) !== "IDR" || w.type === "E_WALLET") || [];
+  const valasWallets = wallets?.filter((w) => resolveCurrency(w) !== "IDR") || [];
   const rdnAndInvestWallets = wallets?.filter((w) => w.type === "RDN" || w.type === "DEPOSITO" || w.type === "CRYPTO_WALLET") || [];
 
   const walletGroups = [
-    { title: "🏛️ Rekening Bank & Cash Utama", items: bankWallets },
+    { title: "🏛️ Rekening Bank Debit & Cash Utama", items: bankWallets },
+    { title: "📱 QRIS & Dompet Digital (E-Wallet)", items: qrisWallets },
     { title: "💳 Kartu Kredit & Limit", items: creditCards },
-    { title: "🌐 Akun Valas & E-Wallet", items: valasWallets },
+    { title: "🌐 Akun Valas (Mata Uang Asing)", items: valasWallets },
     { title: "📈 RDN Sekuritas & Deposito", items: rdnAndInvestWallets }
   ].filter((g) => g.items.length > 0);
 
@@ -122,7 +139,7 @@ export default function WalletsView({ wallets, onOpenModal, onDeleteWallet }) {
     const isCreditCard = w.type === "CREDIT_CARD";
 
     const limit = Number(w.creditLimit) || 0;
-    const remaining = Number(w.remainingLimit) || Number(w.balance) || 0;
+    const remaining = Number(w.balance) || 0;
     const used = limit > 0 ? Math.max(0, limit - remaining) : 0;
     const usagePercent = limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0;
     const equivalentIDR = getEquivalentIDR(isCreditCard ? remaining : w.balance, currency);
@@ -211,12 +228,25 @@ export default function WalletsView({ wallets, onOpenModal, onDeleteWallet }) {
           <h2 className="text-xl font-bold text-slate-900">Manajemen Akun Keuangan & Kartu Kredit</h2>
           <p className="text-xs text-slate-500">Pencatatan akun Rupiah, Kartu Kredit (Limit Total & Sisa Limit), serta Valas (USD, CNY, MYR, GBP, SAR).</p>
         </div>
-        <button
-          onClick={() => onOpenModal("create_wallet")}
-          className="w-full sm:w-auto px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-xs flex items-center justify-center gap-1.5 cursor-pointer transition"
-        >
-          <Plus className="w-4 h-4" /> Tambah Akun
-        </button>
+        <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
+          {onRecalculateWallets && (
+            <button
+              onClick={handleRecalculateClick}
+              disabled={recalculating}
+              className="w-full sm:w-auto px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-semibold shadow-xs flex items-center justify-center gap-1.5 cursor-pointer transition disabled:opacity-50"
+              title="Hitung ulang saldo dan sisa limit berdasarkan riwayat transaksi"
+            >
+              <RotateCcw className={`w-3.5 h-3.5 ${recalculating ? "animate-spin text-indigo-600" : ""}`} />
+              <span>Hitung Ulang Saldo</span>
+            </button>
+          )}
+          <button
+            onClick={() => onOpenModal("create_wallet")}
+            className="w-full sm:w-auto px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-xs flex items-center justify-center gap-1.5 cursor-pointer transition"
+          >
+            <Plus className="w-4 h-4" /> Tambah Akun
+          </button>
+        </div>
       </div>
 
       {/* Quick Action Grid */}

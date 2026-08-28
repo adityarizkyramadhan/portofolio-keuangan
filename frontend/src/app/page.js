@@ -150,6 +150,16 @@ export default function Home() {
     }
   };
 
+  const handleRecalculateWallets = async () => {
+    try {
+      await api.recalculateWallets();
+      showToast("success", "Kalkulasi ulang saldo & limit akun berhasil diperbarui!");
+      fetchLiveBackendData();
+    } catch (e) {
+      showToast("error", e.message || "Gagal melakukan hitung ulang saldo");
+    }
+  };
+
   const handleCreateReminderDirect = async (reminderData) => {
     try {
       await api.createReminder(reminderData);
@@ -447,6 +457,7 @@ export default function Home() {
                   wallets={wallets}
                   onOpenModal={handleOpenModal}
                   onDeleteWallet={handleDeleteWallet}
+                  onRecalculateWallets={handleRecalculateWallets}
                 />
               )}
               {activeTab === "portfolio" && <PortfolioView assets={assets} onOpenModal={handleOpenModal} />}

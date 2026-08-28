@@ -6,11 +6,12 @@ import { X, Check } from "lucide-react";
 import CustomSelect from "@/components/CustomSelect";
 
 const WALLET_TYPE_OPTIONS = [
-  { value: "BANK", label: "BANK UTAMA (Operasional & Gaji)" },
+  { value: "BANK", label: "BANK UTAMA / DEBIT (Operasional & Gaji)" },
   { value: "BANK_SAVINGS", label: "BANK TABUNGAN (Dana Darurat)" },
   { value: "CREDIT_CARD", label: "KARTU KREDIT (Credit Card)" },
+  { value: "QRIS", label: "QRIS / E-WALLET (Gopay, OVO, Dana, ShopeePay, QRIS)" },
+  { value: "E_WALLET", label: "E-WALLET LAINNYA" },
   { value: "RDN", label: "RDN (Rekening Dana Nasabah Sekuritas)" },
-  { value: "E_WALLET", label: "E-WALLET / QRIS" },
   { value: "CASH", label: "CASH (Uang Tunai)" },
   { value: "DEPOSITO", label: "DEPOSITO / GIRO" },
   { value: "CRYPTO_WALLET", label: "DOMPET KRIPTO" },
@@ -56,11 +57,8 @@ export default function FormModal({ modalType, targetAsset, isOpen, onClose, onS
       setFormData({ action: "BUY" });
     } else if (modalType === "cash_out") {
       const idrWallets = wallets?.filter((w) => (!w.currency || w.currency === "IDR")) || [];
-      const ccWallet =
-        idrWallets.find((w) => w.type === "CREDIT_CARD") ||
-        idrWallets.find((w) => w.name?.toLowerCase().includes("kartu kredit") || w.name?.toLowerCase().includes("cc")) ||
-        idrWallets[0];
-      setFormData({ walletId: ccWallet?._id || "" });
+      const defaultWallet = idrWallets[0] || wallets?.[0];
+      setFormData({ walletId: defaultWallet?._id || "" });
     } else if (modalType === "cash_in") {
       setFormData({ walletId: wallets?.[0]?._id || "" });
     } else {
@@ -231,13 +229,17 @@ export default function FormModal({ modalType, targetAsset, isOpen, onClose, onS
                   <label className="block text-slate-600 mb-1.5 font-semibold">AKUN KEUANGAN</label>
                   <CustomSelect
                     options={
-                      (modalType === "cash_out"
-                        ? wallets?.filter((w) => (!w.currency || w.currency === "IDR"))
-                        : wallets
-                      )?.map((w) => ({
-                        value: w._id,
-                        label: `${w.name} (${w.currency || "IDR"}) - Saldo: ${w.currency || "IDR"} ${w.balance?.toLocaleString()}`
-                      })) || []
+                      wallets?.map((w) => {
+                        const isCC = w.type === "CREDIT_CARD";
+                        const balText = isCC
+                          ? `Sisa Limit: Rp ${Number(w.balance || 0).toLocaleString("id-ID")}`
+                          : `Saldo: ${w.currency || "IDR"} ${Number(w.balance || 0).toLocaleString("id-ID")}`;
+                        const typeTag = w.type === "QRIS" ? "QRIS" : isCC ? "Kartu Kredit" : w.type === "BANK" ? "Bank Debit" : w.type;
+                        return {
+                          value: w._id,
+                          label: `${w.name} (${typeTag}) - ${balText}`
+                        };
+                      }) || []
                     }
                     value={formData.walletId}
                     onChange={(val) => handleCustomSelectChange("walletId", val)}

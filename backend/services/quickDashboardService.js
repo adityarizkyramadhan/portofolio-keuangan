@@ -43,7 +43,7 @@ class QuickDashboardService {
       const currency = this.resolveCurrency(w);
       if (w.type === 'CREDIT_CARD') {
         const limit = Number(w.creditLimit) || 0;
-        const remaining = Number(w.remainingLimit) || Number(w.balance) || 0;
+        const remaining = Number(w.balance);
         const used = limit > 0 ? Math.max(0, limit - remaining) : 0;
         const usedInIdr = (currency !== 'IDR' && rates[currency]) ? (used / rates[currency]) : used;
         totalCreditCardDebt += usedInIdr;

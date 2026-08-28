@@ -11,5 +11,6 @@ router.post('/', (req, res, next) => walletController.create(req, res, next));
 router.delete('/:id', (req, res, next) => walletController.delete(req, res, next));
 router.post('/transaction', (req, res, next) => walletController.recordTransaction(req, res, next));
 router.post('/transfer', (req, res, next) => walletController.transfer(req, res, next));
+router.post('/recalculate', (req, res, next) => walletController.recalculate(req, res, next));
 
 module.exports = router;

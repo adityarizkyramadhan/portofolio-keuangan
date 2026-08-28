@@ -156,6 +156,67 @@ class WalletService {
 
     return { transaction: tx, sourceWallet: updatedSource, destinationWallet: updatedDest };
   }
+
+  async recalculateBalances(userId) {
+    const wallets = await walletRepository.findByUserId(userId);
+    const transactions = await cashTransactionRepository.findByUserId(userId, 100000);
+
+    const walletMap = new Map();
+    wallets.forEach(w => {
+      walletMap.set(w._id.toString(), {
+        wallet: w,
+        netTransactions: 0
+      });
+    });
+
+    for (const tx of transactions) {
+      const srcId = tx.accountId?.toString();
+      const destId = tx.destinationAccountId?.toString();
+      const amount = Number(tx.amount) || 0;
+
+      if (tx.type === 'INCOME') {
+        if (walletMap.has(srcId)) {
+          walletMap.get(srcId).netTransactions += amount;
+        }
+      } else if (tx.type === 'EXPENSE') {
+        if (walletMap.has(srcId)) {
+          walletMap.get(srcId).netTransactions -= amount;
+        }
+      } else if (tx.type === 'TRANSFER') {
+        if (walletMap.has(srcId)) {
+          walletMap.get(srcId).netTransactions -= amount;
+        }
+        if (destId && walletMap.has(destId)) {
+          walletMap.get(destId).netTransactions += amount;
+        }
+      }
+    }
+
+    const updatedWallets = [];
+    for (const { wallet, netTransactions } of walletMap.values()) {
+      let recalculatedBalance = 0;
+      let recalculatedRemaining = 0;
+
+      if (wallet.type === 'CREDIT_CARD') {
+        const limit = Number(wallet.creditLimit) || 0;
+        recalculatedBalance = limit + netTransactions;
+        recalculatedRemaining = recalculatedBalance;
+      } else {
+        const baseBalance = wallet.initialBalance !== undefined ? Number(wallet.initialBalance) : Number(wallet.balance) - netTransactions;
+        recalculatedBalance = baseBalance + netTransactions;
+        recalculatedRemaining = recalculatedBalance;
+      }
+
+      const updated = await walletRepository.updateBalanceAndLimit(
+        wallet._id,
+        recalculatedBalance,
+        recalculatedRemaining
+      );
+      if (updated) updatedWallets.push(updated);
+    }
+
+    return updatedWallets;
+  }
 }
 
 module.exports = new WalletService();

@@ -38,11 +38,35 @@ class WalletRepository {
 
   async updateBalance(id, amountChange) {
     if (!ObjectId.isValid(id)) return null;
+    const wallet = await this.collection.findOne({ _id: new ObjectId(id) });
+    if (!wallet) return null;
+
+    const numChange = Number(amountChange) || 0;
+    const incQuery = { balance: numChange };
+    if (wallet.type === 'CREDIT_CARD' || wallet.remainingLimit !== undefined) {
+      incQuery.remainingLimit = numChange;
+    }
+
     return await this.collection.findOneAndUpdate(
       { _id: new ObjectId(id) },
       {
-        $inc: { balance: Number(amountChange) || 0 },
+        $inc: incQuery,
         $set: { updatedAt: new Date() }
+      },
+      { returnDocument: 'after' }
+    );
+  }
+
+  async updateBalanceAndLimit(id, newBalance, newRemainingLimit) {
+    if (!ObjectId.isValid(id)) return null;
+    return await this.collection.findOneAndUpdate(
+      { _id: new ObjectId(id) },
+      {
+        $set: {
+          balance: Number(newBalance) || 0,
+          remainingLimit: Number(newRemainingLimit) || 0,
+          updatedAt: new Date()
+        }
       },
       { returnDocument: 'after' }
     );

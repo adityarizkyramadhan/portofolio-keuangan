@@ -78,6 +78,19 @@ class WalletController {
       next(error);
     }
   }
+
+  async recalculate(req, res, next) {
+    try {
+      const updatedWallets = await walletService.recalculateBalances(req.userId);
+      res.status(200).json({
+        success: true,
+        message: 'Hitung ulang saldo dan limit akun keuangan berhasil',
+        data: updatedWallets
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 module.exports = new WalletController();
