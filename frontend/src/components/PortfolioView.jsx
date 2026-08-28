@@ -1,56 +1,11 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { TrendingUp, Plus, Edit3, ShoppingBag, TrendingDown } from "lucide-react";
+import { TrendingUp, Plus, Edit3, ShoppingBag } from "lucide-react";
 
 export default function PortfolioView({ assets = [], onOpenModal }) {
   const formatIDR = (val) => {
     return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(val || 0);
-  };
-
-  // Generate synthetic mini SVG sparkline path for visual trend demonstration
-  const generateSparkline = (id, totalValue) => {
-    const seed = (id || "").toString().split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const isPositive = seed % 2 === 0;
-
-    const points = isPositive
-      ? [15, 18, 14, 22, 20, 26, 25, 32]
-      : [32, 28, 29, 22, 24, 18, 19, 14];
-
-    const maxP = Math.max(...points);
-    const minP = Math.min(...points);
-    const height = 30;
-    const width = 100;
-
-    const normalizedPoints = points.map((p, i) => {
-      const x = (i / (points.length - 1)) * width;
-      const y = height - ((p - minP) / (maxP - minP || 1)) * (height - 6) - 3;
-      return `${x},${y}`;
-    });
-
-    const strokeColor = isPositive ? "#10b981" : "#f43f5e";
-    const fillColor = isPositive ? "rgba(16, 185, 129, 0.1)" : "rgba(244, 63, 94, 0.1)";
-
-    return (
-      <div className="flex items-center gap-2">
-        <div className="w-24 h-8">
-          <svg viewBox="0 0 100 30" className="w-full h-full overflow-visible">
-            <polyline
-              fill="none"
-              stroke={strokeColor}
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              points={normalizedPoints.join(" ")}
-            />
-          </svg>
-        </div>
-        <span className={`text-[10px] font-extrabold flex items-center gap-0.5 ${isPositive ? "text-emerald-600" : "text-rose-600"}`}>
-          {isPositive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-          {isPositive ? "+4.2%" : "-2.1%"}
-        </span>
-      </div>
-    );
   };
 
   // Group assets into categories
@@ -92,12 +47,6 @@ export default function PortfolioView({ assets = [], onOpenModal }) {
         >
           <Edit3 className="w-3.5 h-3.5" /> Pembaruan Nilai
         </button>
-      </div>
-
-      {/* Mini Sparkline Chart */}
-      <div className="py-1 flex justify-between items-center border-t border-slate-100 pt-3">
-        <span className="text-[10px] text-slate-400 font-semibold uppercase">Tren Harga (30 Hari)</span>
-        {generateSparkline(asset._id, asset.totalValue)}
       </div>
 
       <div className="pt-2 border-t border-slate-100 flex justify-between items-end">

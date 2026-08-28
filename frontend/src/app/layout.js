@@ -24,6 +24,8 @@ export default function RootLayout({ children }) {
     <html lang="id">
       <head>
         <link rel="manifest" href="/manifest.json" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
         <meta name="theme-color" content="#4F46E5" />
       </head>
       <body className="antialiased bg-slate-50 text-slate-900 font-sans">
