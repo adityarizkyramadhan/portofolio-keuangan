@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
 class ApiClient {
   getToken() {
@@ -41,7 +41,7 @@ class ApiClient {
         data = await response.json();
       } else {
         const text = await response.text();
-        throw new Error(`Server Backend mengembalikan respon non-JSON (Status ${response.status}). Pastikan backend berjalan di http://localhost:5000`);
+        throw new Error(`Server Backend mengembalikan respon non-JSON (Status ${response.status}).`);
       }
 
       if (!response.ok) {

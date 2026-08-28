@@ -391,7 +391,7 @@ export default function Home() {
             <div className="flex items-center gap-2 max-w-4xl mx-auto w-full">
               <WifiOff className="w-4 h-4 flex-shrink-0" />
               <span>
-                <strong>Koneksi API Backend Terputus:</strong> Tidak dapat terhubung ke <code>http://localhost:5000</code>. Pastikan server backend dalam keadaan aktif.
+                <strong>Koneksi API Backend Terputus:</strong> Tidak dapat terhubung ke server backend API. Pastikan server backend & database terhubung.
               </span>
             </div>
             <button

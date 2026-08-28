@@ -2,26 +2,28 @@ const { MongoClient, ServerApiVersion } = require('mongodb');
 require('dotenv').config();
 const logger = require('../utils/logger');
 
-const uri = process.env.MONGODB_URI;
-
-if (!uri) {
-  logger.error("MONGODB_URI tidak ditemukan di file .env", { context: "MongoDB Config" });
-  process.exit(1);
-}
-
-// Create a MongoClient with a MongoClientOptions object to set the Stable API version
-const client = new MongoClient(uri, {
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: true,
-    deprecationErrors: true,
-  }
-});
-
+let client = null;
 let dbInstance = null;
 
 async function connectDB() {
   if (dbInstance) return dbInstance;
+
+  const uri = process.env.MONGODB_URI;
+  if (!uri) {
+    logger.error("MONGODB_URI tidak ditemukan di environment variables", { context: "MongoDB Config" });
+    throw new Error("MONGODB_URI tidak terkonfigurasi di environment variables server.");
+  }
+
+  if (!client) {
+    client = new MongoClient(uri, {
+      serverApi: {
+        version: ServerApiVersion.v1,
+        strict: true,
+        deprecationErrors: true,
+      }
+    });
+  }
+
   try {
     logger.info("Menghubungkan ke MongoDB Atlas...", { context: "MongoDB Connect" });
     await client.connect();
@@ -50,4 +52,4 @@ function getDb() {
   return dbInstance;
 }
 
-module.exports = { client, connectDB, getDb };
+module.exports = { get client() { return client; }, connectDB, getDb };
