@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-slate: #F8FAFC;
+  --card-white: #FFFFFF;
+  --text-slate-900: #0F172A;
+  --text-slate-600: #475569;
+  --primary-indigo: #4F46E5;
+  --emerald-income: #059669;
+  --rose-expense: #E11D48;
+}
+
+body {
+  background-color: var(--bg-slate);
+  color: var(--text-slate-900);
+  font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, sans-serif;
+  min-height: 100vh;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #F1F5F9;
+}
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 9999px;
+}
