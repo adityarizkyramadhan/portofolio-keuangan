@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { PieChart, Plus, AlertCircle, CheckCircle, Edit2, ShieldAlert, Download } from "lucide-react";
+import { PieChart, Plus, AlertCircle, CheckCircle, Edit2, ShieldAlert, Download, Wallet } from "lucide-react";
 
 export default function BudgetingView({ categories = [], transactions = [], selectedDate }) {
   const [budgets, setBudgets] = useState({});
@@ -59,6 +59,13 @@ export default function BudgetingView({ categories = [], transactions = [], sele
       .reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
   };
 
+  // Total Budget Aggregations
+  const totalLimit = expenseCategories.reduce((sum, cat) => sum + (budgets[cat._id] || 0), 0);
+  const totalSpent = expenseCategories.reduce((sum, cat) => sum + calculateActualSpent(cat._id), 0);
+  const totalRemaining = Math.max(0, totalLimit - totalSpent);
+  const totalPercentage = totalLimit > 0 ? Math.min(100, Math.round((totalSpent / totalLimit) * 100)) : 0;
+  const isTotalOver = totalLimit > 0 && totalSpent > totalLimit;
+
   const handleExportBudgetCSV = () => {
     if (!expenseCategories || expenseCategories.length === 0) {
       alert("Tidak ada data anggaran untuk diekspor.");
@@ -100,6 +107,44 @@ export default function BudgetingView({ categories = [], transactions = [], sele
         >
           <Download className="w-4 h-4" /> Ekspor Anggaran (CSV)
         </button>
+      </div>
+
+      {/* Total Budget Summary Banner */}
+      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl p-5 shadow-md border border-slate-800 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-4">
+          <div>
+            <span className="text-[11px] font-bold tracking-wider text-indigo-300 uppercase block">RINGKASAN TOTAL ANGGARAN BULAN INI</span>
+            <h3 className="text-2xl font-black text-white mt-0.5 tracking-tight">{formatIDR(totalLimit)}</h3>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="bg-white/10 backdrop-blur-xs px-3.5 py-2 rounded-xl border border-white/10 text-right">
+              <span className="text-[10px] text-slate-300 font-semibold block uppercase">Total Terpakai</span>
+              <span className={`text-sm font-extrabold ${isTotalOver ? "text-rose-400" : "text-emerald-400"}`}>{formatIDR(totalSpent)}</span>
+            </div>
+            <div className="bg-white/10 backdrop-blur-xs px-3.5 py-2 rounded-xl border border-white/10 text-right">
+              <span className="text-[10px] text-slate-300 font-semibold block uppercase">Sisa Total</span>
+              <span className="text-sm font-extrabold text-white">{formatIDR(totalRemaining)}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Overall Progress Bar */}
+        <div className="space-y-1.5">
+          <div className="flex justify-between text-xs font-bold">
+            <span className={isTotalOver ? "text-rose-400" : totalPercentage > 80 ? "text-amber-400" : "text-emerald-400"}>
+              {totalPercentage}% dari Total Anggaran Terpakai
+            </span>
+            <span className="text-slate-300">{isTotalOver ? "TERLAMPUI" : `${formatIDR(totalRemaining)} Tersisa`}</span>
+          </div>
+          <div className="w-full h-3 bg-white/10 rounded-full overflow-hidden">
+            <div
+              className={`h-full transition-all duration-500 rounded-full ${
+                isTotalOver ? "bg-rose-500" : totalPercentage > 80 ? "bg-amber-500" : "bg-emerald-500"
+              }`}
+              style={{ width: `${totalPercentage}%` }}
+            />
+          </div>
+        </div>
       </div>
 
       {/* Budget Category Cards */}
