@@ -84,6 +84,10 @@ class ApiClient {
     return await this.request('DELETE', `/categories/${id}`);
   }
 
+  async updateCategoryLimit(id, budgetLimit) {
+    return await this.request('PUT', `/categories/${id}/limit`, { budgetLimit });
+  }
+
   // Wallets & Cash
   async getWallets() {
     return await this.request('GET', '/wallets');

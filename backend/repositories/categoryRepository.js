@@ -48,6 +48,21 @@ class CategoryRepository {
     });
     return result.deletedCount > 0;
   }
+
+  async updateLimit(id, userId, budgetLimit) {
+    if (!ObjectId.isValid(id)) return false;
+    const result = await this.collection.updateOne(
+      {
+        _id: new ObjectId(id),
+        $or: [
+          { userId: new ObjectId(userId) },
+          { isSystem: true }
+        ]
+      },
+      { $set: { budgetLimit: Number(budgetLimit) || 0, updatedAt: new Date() } }
+    );
+    return result.modifiedCount > 0 || result.matchedCount > 0;
+  }
 }
 
 module.exports = new CategoryRepository();

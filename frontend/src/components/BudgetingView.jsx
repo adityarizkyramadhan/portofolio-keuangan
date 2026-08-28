@@ -3,34 +3,38 @@
 import { useState, useEffect } from "react";
 import { PieChart, Plus, AlertCircle, CheckCircle, Edit2, ShieldAlert, Download, Wallet } from "lucide-react";
 
-export default function BudgetingView({ categories = [], transactions = [], selectedDate }) {
+export default function BudgetingView({ categories = [], transactions = [], selectedDate, onUpdateCategoryLimit }) {
   const [budgets, setBudgets] = useState({});
   const [editingCategory, setEditingCategory] = useState(null);
   const [inputLimit, setInputLimit] = useState("");
 
   const expenseCategories = categories.filter((c) => c.type === "EXPENSE");
 
-  // Load budgets from localStorage
+  // Load budgets from categories (MongoDB Atlas) with localStorage backup
   useEffect(() => {
+    const loaded = {};
+    let localSaved = null;
     try {
       const saved = localStorage.getItem("keuanganku_category_budgets");
-      if (saved) {
-        setBudgets(JSON.parse(saved));
-      } else {
-        // Default budgets for common expense categories
-        const defaults = {};
-        expenseCategories.forEach((c) => {
-          defaults[c._id] = 2000000; // default 2 mil IDR limit
-        });
-        setBudgets(defaults);
-      }
-    } catch (e) {
-      console.warn("Failed to load budgets from localStorage", e);
-    }
-  }, [categories.length]);
+      if (saved) localSaved = JSON.parse(saved);
+    } catch (e) {}
 
-  const saveBudget = (categoryId, limit) => {
-    const updated = { ...budgets, [categoryId]: Number(limit) || 0 };
+    expenseCategories.forEach((c) => {
+      if (c.budgetLimit !== undefined && c.budgetLimit !== null) {
+        loaded[c._id] = c.budgetLimit;
+      } else if (localSaved && localSaved[c._id] !== undefined) {
+        loaded[c._id] = localSaved[c._id];
+      } else {
+        loaded[c._id] = 2000000;
+      }
+    });
+
+    setBudgets(loaded);
+  }, [categories]);
+
+  const saveBudget = async (categoryId, limit) => {
+    const numLimit = Number(limit) || 0;
+    const updated = { ...budgets, [categoryId]: numLimit };
     setBudgets(updated);
     try {
       localStorage.setItem("keuanganku_category_budgets", JSON.stringify(updated));
@@ -38,6 +42,10 @@ export default function BudgetingView({ categories = [], transactions = [], sele
       console.warn("Failed to save budgets to localStorage", e);
     }
     setEditingCategory(null);
+
+    if (onUpdateCategoryLimit) {
+      await onUpdateCategoryLimit(categoryId, numLimit);
+    }
   };
 
   const formatIDR = (val) => {

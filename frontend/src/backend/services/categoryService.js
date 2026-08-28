@@ -35,6 +35,16 @@ class CategoryService {
     }
     return true;
   }
+
+  async updateLimit(id, userId, budgetLimit) {
+    const updated = await categoryRepository.updateLimit(id, userId, budgetLimit);
+    if (!updated) {
+      const err = new Error('Kategori tidak ditemukan');
+      err.statusCode = 404;
+      throw err;
+    }
+    return true;
+  }
 }
 
 module.exports = new CategoryService();

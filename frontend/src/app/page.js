@@ -214,6 +214,16 @@ export default function Home() {
     }
   };
 
+  const handleUpdateCategoryLimit = async (categoryId, limit) => {
+    try {
+      await api.updateCategoryLimit(categoryId, limit);
+      showToast("success", "Batas anggaran kategori berhasil disimpan!");
+      fetchLiveBackendData();
+    } catch (e) {
+      showToast("error", e.message || "Gagal memperbarui batas anggaran kategori");
+    }
+  };
+
   const handleModalSubmit = async (type, data) => {
     try {
       if (type === "create_wallet") {
@@ -445,6 +455,7 @@ export default function Home() {
                   categories={categories}
                   transactions={transactions}
                   selectedDate={selectedDate}
+                  onUpdateCategoryLimit={handleUpdateCategoryLimit}
                 />
               )}
               {activeTab === "transactions" && (

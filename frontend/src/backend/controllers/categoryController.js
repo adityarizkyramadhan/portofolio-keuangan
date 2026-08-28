@@ -38,6 +38,19 @@ class CategoryController {
       next(error);
     }
   }
+
+  async updateLimit(req, res, next) {
+    try {
+      const { budgetLimit } = req.body;
+      await categoryService.updateLimit(req.params.id, req.userId, budgetLimit);
+      res.status(200).json({
+        success: true,
+        message: 'Batas anggaran kategori berhasil diperbarui'
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 module.exports = new CategoryController();
