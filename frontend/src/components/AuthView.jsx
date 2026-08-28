@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ShieldCheck, LogIn, UserPlus, AlertCircle, Loader2 } from "lucide-react";
+import { ShieldCheck, LogIn, UserPlus, AlertCircle, Loader2, Fingerprint } from "lucide-react";
 import { api } from "@/lib/api";
+import { isBiometricSupported, isBiometricEnabled, getBiometricUser, authenticateWithBiometric, enableBiometricForUser } from "@/lib/biometric";
 
 export default function AuthView({ onLoginSuccess }) {
   const [isRegister, setIsRegister] = useState(false);
@@ -12,6 +13,30 @@ export default function AuthView({ onLoginSuccess }) {
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
+  const [hasBiometric, setHasBiometric] = useState(false);
+  const [biometricUser, setBiometricUser] = useState(null);
+
+  useEffect(() => {
+    if (isBiometricSupported() && isBiometricEnabled()) {
+      setHasBiometric(true);
+      setBiometricUser(getBiometricUser());
+    }
+  }, []);
+
+  const handleBiometricLogin = async () => {
+    setErrorMsg("");
+    setLoading(true);
+
+    try {
+      const { token, user } = await authenticateWithBiometric();
+      api.setToken(token);
+      onLoginSuccess(user);
+    } catch (err) {
+      setErrorMsg(err.message || "Gagal masuk dengan sidik jari.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -27,7 +52,19 @@ export default function AuthView({ onLoginSuccess }) {
       }
 
       if (res && res.success) {
-        onLoginSuccess(res.data.user);
+        const token = res.data?.token || api.getToken();
+        const user = res.data?.user;
+
+        // Auto-enable biometric unlock on device for future quick access if supported
+        if (isBiometricSupported() && user && token) {
+          try {
+            await enableBiometricForUser(user, token);
+          } catch (bioErr) {
+            console.log("Biometric auto-enable info:", bioErr.message);
+          }
+        }
+
+        onLoginSuccess(user);
       } else {
         setErrorMsg(res.message || "Proses autentikasi tidak berhasil");
       }
@@ -61,6 +98,37 @@ export default function AuthView({ onLoginSuccess }) {
           <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs flex items-center gap-2">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             <span>{errorMsg}</span>
+          </div>
+        )}
+
+        {/* Biometric Quick Login Button (If Registered on Device) */}
+        {!isRegister && hasBiometric && (
+          <div className="space-y-2 bg-indigo-50/70 border border-indigo-100 p-3.5 rounded-2xl text-center">
+            <span className="text-[11px] font-semibold text-indigo-900 block">
+              Sidik jari terdaftar untuk: {biometricUser?.name || biometricUser?.email || "Perangkat ini"}
+            </span>
+            <button
+              type="button"
+              onClick={handleBiometricLogin}
+              disabled={loading}
+              className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {loading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <>
+                  <Fingerprint className="w-5 h-5 text-emerald-100" /> Masuk dengan Sidik Jari (Biometrik)
+                </>
+              )}
+            </button>
+            <div className="relative my-2">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-indigo-200/60" />
+              </div>
+              <div className="relative flex justify-center text-[10px] uppercase">
+                <span className="bg-indigo-50/70 px-2 text-indigo-400 font-bold">atau masuk dengan email</span>
+              </div>
+            </div>
           </div>
         )}
 
