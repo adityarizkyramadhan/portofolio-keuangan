@@ -1,3 +1,4 @@
+import { Readable } from 'stream';
 import { EventEmitter } from 'events';
 import app from '@/backend/app';
 import { connectDB } from '@/backend/config/db';
@@ -8,14 +9,22 @@ async function handleRequest(request) {
   try {
     await connectDB();
   } catch (err) {
-    console.error("[Next.js API Route] MongoDB Connection Error:", err);
+    console.error("[Next.js API Route] MongoDB Connection Error:", err.message);
+    return new Response(JSON.stringify({
+      success: false,
+      message: `Gagal terhubung ke Database MongoDB: ${err.message}`
+    }), {
+      status: 500,
+      headers: { 'content-type': 'application/json' }
+    });
   }
 
   return new Promise(async (resolve) => {
     const url = new URL(request.url);
-    const bodyText = await request.text();
+    const bodyBuffer = Buffer.from(await request.arrayBuffer());
 
-    const req = new EventEmitter();
+    // Create a real Node.js Readable stream for Express body-parser compatibility
+    const req = Readable.from(bodyBuffer);
     req.method = request.method;
     req.url = url.pathname + url.search;
     req.originalUrl = req.url;
@@ -24,6 +33,7 @@ async function handleRequest(request) {
       req.headers[key] = val;
     });
 
+    // Mock Express Response object
     const res = new EventEmitter();
     res.statusCode = 200;
     res._headers = {};
@@ -67,12 +77,6 @@ async function handleRequest(request) {
 
     // Execute Express App
     app(req, res);
-
-    // Stream body to Express body-parser
-    if (bodyText) {
-      req.emit('data', Buffer.from(bodyText));
-    }
-    req.emit('end');
   });
 }
 
