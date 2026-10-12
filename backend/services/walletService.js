@@ -169,26 +169,28 @@ class WalletService {
       });
     });
 
+    // Wallet dengan snapshot saldo (balanceAsOf) hanya menghitung transaksi setelah snapshot
+    const apply = (id, delta, txDate) => {
+      const entry = walletMap.get(id);
+      if (!entry) return;
+      const asOf = entry.wallet.balanceAsOf;
+      if (asOf && new Date(txDate) <= new Date(asOf)) return;
+      entry.netTransactions += delta;
+    };
+
     for (const tx of transactions) {
       const srcId = tx.accountId?.toString();
       const destId = tx.destinationAccountId?.toString();
       const amount = Number(tx.amount) || 0;
+      const txDate = tx.date || tx.createdAt;
 
       if (tx.type === 'INCOME') {
-        if (walletMap.has(srcId)) {
-          walletMap.get(srcId).netTransactions += amount;
-        }
+        apply(srcId, amount, txDate);
       } else if (tx.type === 'EXPENSE') {
-        if (walletMap.has(srcId)) {
-          walletMap.get(srcId).netTransactions -= amount;
-        }
+        apply(srcId, -amount, txDate);
       } else if (tx.type === 'TRANSFER') {
-        if (walletMap.has(srcId)) {
-          walletMap.get(srcId).netTransactions -= amount;
-        }
-        if (destId && walletMap.has(destId)) {
-          walletMap.get(destId).netTransactions += amount;
-        }
+        apply(srcId, -amount, txDate);
+        if (destId) apply(destId, amount, txDate);
       }
     }
 
@@ -197,7 +199,10 @@ class WalletService {
       let recalculatedBalance = 0;
       let recalculatedRemaining = 0;
 
-      if (wallet.type === 'CREDIT_CARD') {
+      if (wallet.balanceAsOf && wallet.initialBalance !== undefined) {
+        recalculatedBalance = Number(wallet.initialBalance) + netTransactions;
+        recalculatedRemaining = recalculatedBalance;
+      } else if (wallet.type === 'CREDIT_CARD') {
         const limit = Number(wallet.creditLimit) || 0;
         recalculatedBalance = limit + netTransactions;
         recalculatedRemaining = recalculatedBalance;
