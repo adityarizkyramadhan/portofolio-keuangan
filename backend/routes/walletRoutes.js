@@ -6,6 +6,7 @@ const authMiddleware = require('../middlewares/authMiddleware');
 router.use(authMiddleware);
 
 router.get('/', (req, res, next) => walletController.getAll(req, res, next));
+router.get('/recap', (req, res, next) => walletController.getRecap(req, res, next));
 router.get('/transactions', (req, res, next) => walletController.getTransactions(req, res, next));
 router.post('/', (req, res, next) => walletController.create(req, res, next));
 router.delete('/:id', (req, res, next) => walletController.delete(req, res, next));

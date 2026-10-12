@@ -121,6 +121,11 @@ class ApiClient {
     return await this.request('GET', `/wallets/transactions?limit=${limit}`);
   }
 
+  async getExpenseRecap(mode = 'month', page = 1, limit = 6) {
+    const tz = new Date().getTimezoneOffset();
+    return await this.request('GET', `/wallets/recap?mode=${mode}&page=${page}&limit=${limit}&tz=${tz}`);
+  }
+
   // Portfolio
   async getPortfolioAssets() {
     return await this.request('GET', '/portfolio');

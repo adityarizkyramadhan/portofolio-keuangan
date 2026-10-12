@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { LayoutDashboard, Wallet, TrendingUp, Tag, Bell, ShieldCheck, LogOut, WifiOff, RefreshCw, Loader2, Receipt, PieChart, MoreHorizontal, X, Sparkles } from "lucide-react";
+import { LayoutDashboard, Wallet, TrendingUp, Tag, Bell, ShieldCheck, LogOut, WifiOff, RefreshCw, Loader2, Receipt, PieChart, MoreHorizontal, X, Sparkles, BarChart3 } from "lucide-react";
 import AuthView from "@/components/AuthView";
 import DashboardView from "@/components/DashboardView";
 import WalletsView from "@/components/WalletsView";
@@ -10,6 +10,7 @@ import TransactionsView from "@/components/TransactionsView";
 import RemindersView from "@/components/RemindersView";
 import TransactionsLedgerView from "@/components/TransactionsLedgerView";
 import BudgetingView from "@/components/BudgetingView";
+import RecapView from "@/components/RecapView";
 import FormModal from "@/components/FormModal";
 import SalarySettingsModal from "@/components/SalarySettingsModal";
 import Toast from "@/components/Toast";
@@ -344,6 +345,7 @@ export default function Home() {
   ];
 
   const SECONDARY_NAV_ITEMS = [
+    { id: "recap", label: "Rekap Pengeluaran", icon: BarChart3 },
     { id: "budgeting", label: "Anggaran & Target", icon: PieChart },
     { id: "reminders", label: "Pengingat Tagihan", icon: Bell },
     { id: "transactions", label: "Kategori Transaksi", icon: Tag }
@@ -505,6 +507,7 @@ export default function Home() {
               {activeTab === "reminders" && <TransactionsSkeleton />}
               {activeTab === "ledger" && <TransactionsSkeleton />}
               {activeTab === "budgeting" && <TransactionsSkeleton />}
+              {activeTab === "recap" && <TransactionsSkeleton />}
             </>
           ) : (
             <>
@@ -537,6 +540,7 @@ export default function Home() {
                 />
               )}
               {activeTab === "portfolio" && <PortfolioView assets={assets} onOpenModal={handleOpenModal} />}
+              {activeTab === "recap" && <RecapView refreshKey={transactions} />}
               {activeTab === "budgeting" && (
                 <BudgetingView
                   categories={categories}

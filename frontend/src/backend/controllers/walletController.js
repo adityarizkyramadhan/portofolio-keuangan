@@ -1,4 +1,5 @@
 const walletService = require('../services/walletService');
+const recapService = require('../services/recapService');
 
 class WalletController {
   async getAll(req, res, next) {
@@ -22,6 +23,20 @@ class WalletController {
         success: true,
         message: 'Berhasil mengambil daftar transaksi kas',
         data: transactions
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getRecap(req, res, next) {
+    try {
+      const { mode, page, limit, tz } = req.query;
+      const recap = await recapService.getExpenseRecap(req.userId, { mode, page, limit, tzOffset: tz });
+      res.status(200).json({
+        success: true,
+        message: 'Berhasil mengambil rekap pengeluaran',
+        data: recap
       });
     } catch (error) {
       next(error);
