@@ -29,6 +29,8 @@ class ReminderRepository {
       dueDate: new Date(data.dueDate),
       status: data.status || 'PENDING', // 'PENDING' | 'PAID'
       walletId: data.walletId ? new ObjectId(data.walletId) : null,
+      // Opsional: tujuan transfer, mis. kartu kredit untuk bayar cicilan (tidak dicatat sebagai pengeluaran)
+      destinationWalletId: data.destinationWalletId ? new ObjectId(data.destinationWalletId) : null,
       categoryId: data.categoryId ? new ObjectId(data.categoryId) : null,
       note: data.note || '',
       createdAt: new Date(),

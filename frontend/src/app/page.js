@@ -214,17 +214,10 @@ export default function Home() {
   const handleMarkReminderPaid = async (reminderOrId) => {
     try {
       const id = typeof reminderOrId === "object" ? reminderOrId._id : reminderOrId;
-      await api.markReminderPaid(id);
+      await api.markReminderPaid(id); // backend yang mencatat transaksinya
 
       if (typeof reminderOrId === "object" && reminderOrId.walletId && reminderOrId.amount > 0) {
-        await api.recordWalletTransaction({
-          walletId: reminderOrId.walletId,
-          categoryId: reminderOrId.categoryId || null,
-          type: "EXPENSE",
-          amount: reminderOrId.amount,
-          note: `Pelunasan Tagihan: ${reminderOrId.title}`
-        });
-        showToast("success", `Tagihan "${reminderOrId.title}" dilunasi & dicatat ke pengeluaran kas!`);
+        showToast("success", `Tagihan "${reminderOrId.title}" dilunasi & tercatat di akun!`);
       } else {
         showToast("success", "Pengingat pembayaran berhasil ditandai lunas!");
       }

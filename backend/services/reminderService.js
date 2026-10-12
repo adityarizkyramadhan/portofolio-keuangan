@@ -31,14 +31,22 @@ class ReminderService {
       return reminder;
     }
 
-    // Automatically record cash expense if walletId is associated
-    if (reminder.walletId) {
-      await walletService.recordCashTransaction(userId, {
-        walletId: reminder.walletId,
+    // Catat pembayaran otomatis jika pengingat terhubung ke akun (satu-satunya tempat pencatatan, frontend tidak mencatat lagi)
+    const note = `[Pengingat Pembayaran] ${reminder.title}`;
+    if (reminder.walletId && reminder.destinationWalletId) {
+      await walletService.transfer(userId, {
+        sourceWalletId: reminder.walletId.toString(),
+        destinationWalletId: reminder.destinationWalletId.toString(),
+        amount: reminder.amount,
+        note
+      });
+    } else if (reminder.walletId) {
+      await walletService.recordTransaction(userId, {
+        walletId: reminder.walletId.toString(),
         categoryId: reminder.categoryId,
         type: 'EXPENSE',
         amount: reminder.amount,
-        note: `[Pengingat Pembayaran] ${reminder.title}`
+        note
       });
     }
 

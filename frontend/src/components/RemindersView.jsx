@@ -18,6 +18,7 @@ export default function RemindersView({ reminders, wallets, categories, onOpenMo
   const [newDueDate, setNewDueDate] = useState("");
   const [recurringType, setRecurringType] = useState("MONTHLY");
   const [selectedWalletId, setSelectedWalletId] = useState("");
+  const [destinationWalletId, setDestinationWalletId] = useState("");
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
 
   const formatIDR = (val) => {
@@ -34,12 +35,14 @@ export default function RemindersView({ reminders, wallets, categories, onOpenMo
       dueDate: newDueDate,
       recurring: recurringType,
       walletId: selectedWalletId,
+      destinationWalletId: destinationWalletId || null,
       categoryId: selectedCategoryId
     });
 
     setNewTitle("");
     setNewAmount("");
     setNewDueDate("");
+    setDestinationWalletId("");
   };
 
   return (
@@ -107,7 +110,7 @@ export default function RemindersView({ reminders, wallets, categories, onOpenMo
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
             <div>
               <label className="block text-[11px] font-semibold text-slate-600 mb-1">SUMBER AKUN DANA (OPSIONAL)</label>
               <CustomSelect
@@ -122,6 +125,21 @@ export default function RemindersView({ reminders, wallets, categories, onOpenMo
                 placeholder="-- Pilih Akun Sumber --"
                 className="w-full"
               />
+            </div>
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-600 mb-1">BAYAR KE AKUN (OPSIONAL)</label>
+              <CustomSelect
+                options={
+                  wallets
+                    ?.filter((w) => w._id !== selectedWalletId)
+                    .map((w) => ({ value: w._id, label: w.name })) || []
+                }
+                value={destinationWalletId}
+                onChange={(val) => setDestinationWalletId(val)}
+                placeholder="-- Mis. Kartu Kredit (cicilan) --"
+                className="w-full"
+              />
+              <span className="text-[10px] text-slate-400 block mt-1">Diisi = dicatat sebagai transfer, bukan pengeluaran.</span>
             </div>
             <div>
               <label className="block text-[11px] font-semibold text-slate-600 mb-1">KATEGORI (OPSIONAL)</label>
